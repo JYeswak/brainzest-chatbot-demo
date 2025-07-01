@@ -3,32 +3,28 @@
     "contact_email": "angel@p2construction.net",
     "faqs": [
         {
-            "question": "What is P2 Construction's specialty?",
-            "answer": "P2 Construction specializes in high-end, custom residential projects. Our primary services are custom home builds, large-scale renovations, and luxury kitchen and bathroom remodels. We are known for our meticulous attention to detail and modern design aesthetic."
+            "question": "What kind of work does P2 Construction do?",
+            "answer": "P2 Construction is a design-build firm in Steamboat Springs, Colorado, specializing in both residential and commercial projects. Our main services include preliminary design sketches, comprehensive project management, custom home design, exterior renovations, and full residential and commercial construction."
+        },
+        {
+            "question": "Who is the founder of P2 Construction?",
+            "answer": "The company was founded in 2023 by Angel Perez. He has over 30 years of experience in the industry and previously served as the lead project manager for a 24-unit luxury townhome development in one of Steamboat Springs' most exclusive neighborhoods."
         },
         {
             "question": "What areas do you serve?",
-            "answer": "We are based in [Client's City, e.g., San Diego] and serve the greater [Client's County, e.g., San Diego County] area, including surrounding communities like La Jolla, Del Mar, and Rancho Santa Fe."
+            "answer": "We are located in and serve the community of Steamboat Springs, Colorado, and the surrounding areas."
         },
         {
-            "question": "Are you licensed and insured?",
-            "answer": "Yes, P2 Construction is fully licensed by the state of California (License #123456) and carries comprehensive liability and workers' compensation insurance."
+            "question": "What is your company's mission or philosophy?",
+            "answer": "Our mission is to transform spaces and enhance homes by achieving our clients' visions with passion. We treat every client like family and measure our success by their satisfaction, not by profits."
         },
         {
-            "question": "What is the typical timeline for a kitchen remodel?",
-            "answer": "A typical kitchen remodel can take anywhere from 6 to 12 weeks, depending on the complexity, scope of work, and material availability. We can provide a more precise timeline after an initial consultation."
+            "question": "Do you have any client testimonials?",
+            "answer": "Yes, we have many satisfied clients. For example, Robert Rose praised our professionalism and skill, and Reese Whitman highlighted our exceptional service and insightful recommendations. We pride ourselves on quality and attention to detail."
         },
         {
-            "question": "How do I start the process of getting a quote?",
-            "answer": "The first step is to schedule a complimentary 30-minute project consultation with our owner, Angel. We can discuss your vision and see if we're a good fit. Would you like me to help you schedule that?"
-        },
-        {
-            "question": "Do you handle the design and permitting process?",
-            "answer": "Yes, we offer a full design-build service. We can work with you from the initial architectural drawings all the way through securing the necessary permits for your project."
-        },
-        {
-            "question": "What makes P2 Construction different from other builders?",
-            "answer": "Our owner, Angel, is personally involved in every project to ensure the highest quality of craftsmanship. We pride ourselves on clear communication, transparent pricing, and a commitment to finishing projects on time and on budget."
+            "question": "How do I start a project with you?",
+            "answer": "The best way to start is to contact us for a consultation. We can discuss your vision and how our services, from preliminary design to project management, can bring it to life. Would you like me to help you get in touch with our team?"
         }
     ]
 }
