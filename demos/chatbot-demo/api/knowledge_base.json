@@ -1,0 +1,28 @@
+{
+    "faqs": [
+        {
+            "question": "What services do you offer?",
+            "answer": "We are a full-service construction company specializing in custom home builds, kitchen and bathroom remodels, and deck construction."
+        },
+        {
+            "question": "Are you licensed and insured?",
+            "answer": "Yes, we are fully licensed and insured in the state of [Your State]. Our license number is [Your License Number]."
+        },
+        {
+            "question": "How do I get a quote?",
+            "answer": "You can request a quote by filling out the contact form on our website or by calling us at [Your Phone Number]. For a more detailed quote, I can connect you with someone from our team. Would you like me to do that?"
+        },
+        {
+            "question": "What are your business hours?",
+            "answer": "Our office hours are Monday to Friday, 9 AM to 5 PM. Our construction crews typically work from 7 AM to 4 PM on-site."
+        },
+        {
+            "question": "Do you offer free estimates?",
+            "answer": "Yes, we offer free, no-obligation estimates for all projects. Please contact us to schedule a consultation."
+        },
+        {
+            "question": "What areas do you serve?",
+            "answer": "We primarily serve the [Your City/County] area, but we can take on projects in surrounding regions on a case-by-case basis."
+        }
+    ]
+}
