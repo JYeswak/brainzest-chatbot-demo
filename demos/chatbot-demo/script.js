@@ -6,75 +6,86 @@ document.addEventListener('DOMContentLoaded', () => {
     const userInput = document.getElementById('user-input');
     const sendBtn = document.getElementById('send-btn');
 
+    let sessionId = null;
+    let chatHistory = [];
+
     // --- Event Listeners for opening and closing the chat ---
     chatBubble.addEventListener('click', () => {
         chatContainer.style.display = 'flex';
         chatBubble.style.display = 'none';
+        // Start a new session when the chat is opened
+        startNewSession();
     });
 
     closeBtn.addEventListener('click', () => {
+        console.log("Close button clicked!"); // <-- THIS IS THE NEW TEST
         chatContainer.style.display = 'none';
         chatBubble.style.display = 'block';
+        // Log the session when the chat is closed
+        logChatSession();
     });
+
+    const startNewSession = () => {
+        // Generate a simple unique ID for the session
+        sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        chatHistory = [];
+        // Clear the chatBox of old messages
+        chatBox.innerHTML = ''; 
+        addMessage("Hi there! I'm the AI assistant for P2 Construction. How can I help you today?", 'assistant');
+    };
 
     // --- Core Chat Logic ---
 
-    // Function to add a message to the chat box
+    // Updated addMessage to also save to history
     const addMessage = (message, sender) => {
         const messageElement = document.createElement('div');
-        messageElement.classList.add('chat-message', `${sender}-message`);
+        // Use 'assistant' for CSS class if sender is 'assistant'
+        const senderClass = sender === 'assistant' ? 'bot' : sender;
+        messageElement.classList.add('chat-message', `${senderClass}-message`);
         messageElement.innerHTML = `<p>${message}</p>`;
         chatBox.appendChild(messageElement);
-        // Scroll to the bottom of the chat box
         chatBox.scrollTop = chatBox.scrollHeight;
+
+        // Save message to history (don't save the form)
+        if (!message.includes('<form')) {
+            chatHistory.push({ role: sender, content: message });
+        }
     };
 
-    // Function to handle sending a message
+    // Updated handleSendMessage to send history
     const handleSendMessage = async () => {
         const message = userInput.value.trim();
         if (message === '') return;
 
-        // 1. Display the user's message immediately
         addMessage(message, 'user');
-        userInput.value = ''; // Clear the input field
-        
-        // Show the typing indicator
+        userInput.value = '';
         showTypingIndicator();
 
         try {
-            // 2. Send the message to the backend API
             const response = await fetch('/api/index.js', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ message: message }),
+                headers: { 'Content-Type': 'application/json' },
+                // Send the session ID and the full history
+                body: JSON.stringify({ sessionId, history: chatHistory }),
             });
 
-            // Hide the typing indicator once the response is received
             hideTypingIndicator();
-
-            if (!response.ok) {
-                throw new Error('Network response was not ok.');
-            }
+            if (!response.ok) throw new Error('Network response was not ok.');
 
             const data = await response.json();
             const botReply = data.reply;
 
-            // 3. Display the bot's response
-            // Check if the bot is asking for lead capture
             if (botReply.includes("What is your name and email address?")) {
-                addMessage(botReply, 'bot');
+                addMessage(botReply, 'assistant');
                 showLeadCaptureForm();
             } else {
-                addMessage(botReply, 'bot');
+                addMessage(botReply, 'assistant');
             }
 
         } catch (error) {
-            // Hide the typing indicator in case of an error
             hideTypingIndicator();
             console.error('Error fetching bot reply:', error);
-            addMessage("I'm having trouble connecting. Please try again later.", 'bot');
+            addMessage("I'm having trouble connecting. Please try again later.", 'assistant');
         }
     };
 
@@ -86,10 +97,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <button type="submit">Submit</button>
             </form>
         `;
-        addMessage(formHTML, 'bot');
-
-        const leadForm = document.getElementById('lead-form');
-        leadForm.addEventListener('submit', handleLeadSubmit);
+        addMessage(formHTML, 'bot'); // 'bot' is fine here as it's not sent to the API
+        document.getElementById('lead-form').addEventListener('submit', handleLeadSubmit);
     };
 
     const handleLeadSubmit = async (e) => {
@@ -97,22 +106,58 @@ document.addEventListener('DOMContentLoaded', () => {
         const name = document.getElementById('name-input').value;
         const email = document.getElementById('email-input').value;
 
-        addMessage("Thank you! We've received your information and will be in touch shortly.", 'bot');
-        
-        // Disable the form
+        addMessage("Thank you! We've received your information and will be in touch shortly.", 'assistant');
         e.target.innerHTML = '<p>Submitted.</p>';
 
-        // Send the lead data to the backend
+        // Add captured lead info to chat history for logging
+        chatHistory.push({ role: 'system', content: `Lead Captured: Name=${name}, Email=${email}` });
+    };
+
+    // --- New function to log the session ---
+    const logChatSession = async () => {
+        console.log("logChatSession function called."); // Log 1: Function entry
+
+        if (!chatHistory || chatHistory.length <= 1) {
+            console.log("Chat history is too short. Aborting log."); // Log 2: Abort condition
+            return; 
+        }
+
+        console.log("Chat history is long enough. Preparing to log."); // Log 3: Proceeding
+        console.log("Current chat history:", chatHistory); // Log 4: Show the history
+
+        const fullTranscript = chatHistory.map(msg => `${msg.role}: ${msg.content}`).join('\n');
+        const leadInfo = chatHistory.find(msg => msg.role === 'system' && msg.content.startsWith('Lead Captured'));
+        
+        let leadName = '';
+        let leadEmail = '';
+        if (leadInfo) {
+            const parts = leadInfo.content.split(', ');
+            leadName = parts[0].split('=')[1];
+            leadEmail = parts[1].split('=')[1];
+        }
+
+        const payload = {
+            sessionId: sessionId,
+            fullTranscript: fullTranscript,
+            leadName: leadName,
+            leadEmail: leadEmail
+        };
+
+        console.log("Payload to be sent to n8n:", payload); // Log 5: Show the final data
+
         try {
-            await fetch('/api/index.js', {
+            console.log("Attempting to send fetch request to n8n..."); // Log 6: Fetch attempt
+            await fetch('http://localhost:5678/webhook/log-chat-session', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ lead: { name, email } }),
+                body: JSON.stringify(payload),
             });
+            console.log("Fetch request sent successfully."); // Log 7: Success
         } catch (error) {
-            console.error('Error submitting lead:', error);
+            console.error('Error logging chat session:', error); // Log 8: Error
         }
     };
+
 
     // --- Helper functions for typing indicator ---
     const showTypingIndicator = () => {
@@ -140,4 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
             handleSendMessage();
         }
     });
+
+    // Start the first session when the page loads
+    // startNewSession(); // We now start the session on bubble click
 });

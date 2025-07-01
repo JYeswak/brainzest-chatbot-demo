@@ -16,39 +16,24 @@ const openai = new OpenAI({
 
 // This is the main handler function for the serverless environment
 module.exports = async (req, res) => {
-    // We only want to handle POST requests for this endpoint
     if (req.method !== 'POST') {
         res.setHeader('Allow', ['POST']);
         return res.status(405).end(`Method ${req.method} Not Allowed`);
     }
 
     try {
-        const { message, lead } = req.body;
+        const { sessionId, history } = req.body;
 
-        // --- Lead Capture Logic ---
-        if (lead) {
-            console.log('--- NEW LEAD CAPTURED ---');
-            console.log('Name:', lead.name);
-            console.log('Email:', lead.email);
-            console.log('-------------------------');
-            // In a real application, you would add code here to:
-            // 1. Save the lead to a database or Google Sheet.
-            // 2. Send a notification email using a service like SendGrid or Resend.
-            return res.status(200).json({ success: true, message: 'Lead captured.' });
+        if (!history || !Array.isArray(history)) {
+            return res.status(400).json({ error: 'History is required and must be an array.' });
         }
 
         // --- AI Chat Logic ---
-        if (!message) {
-            return res.status(400).json({ error: 'Message is required' });
-        }
-
-        // 1. Read the knowledge base file
         const knowledgeBasePath = path.join(__dirname, 'knowledge_base.json');
         const knowledgeBaseJSON = await fs.readFile(knowledgeBasePath, 'utf8');
         const knowledgeBase = JSON.parse(knowledgeBaseJSON);
         const knowledgeText = knowledgeBase.faqs.map(faq => `Q: ${faq.question}\nA: ${faq.answer}`).join('\n\n');
 
-        // 2. Construct the prompt for the AI
         const systemPrompt = `
             You are a helpful and friendly AI assistant for a construction company called ${knowledgeBase.company_name}.
             Your name is "Zesty".
@@ -62,20 +47,22 @@ module.exports = async (req, res) => {
             --- End Knowledge Base ---
         `;
 
-        // 3. Call the OpenAI API
+        // Construct the messages array for the API call
+        const messages = [
+            { role: 'system', content: systemPrompt },
+            // Add the entire chat history to the messages
+            ...history 
+        ];
+
         const completion = await openai.chat.completions.create({
             model: 'gpt-4o',
-            messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: message }
-            ],
+            messages: messages, // Send the full conversation history
             temperature: 0.5,
             max_tokens: 150,
         });
 
         const botResponse = completion.choices[0].message.content;
 
-        // Send the bot's response back to the frontend
         res.status(200).json({ reply: botResponse });
 
     } catch (error) {
