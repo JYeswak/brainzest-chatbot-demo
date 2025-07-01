@@ -37,6 +37,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // 1. Display the user's message immediately
         addMessage(message, 'user');
         userInput.value = ''; // Clear the input field
+        
+        // Show the typing indicator
+        showTypingIndicator();
 
         try {
             // 2. Send the message to the backend API
@@ -48,6 +51,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ message: message }),
             });
 
+            // Hide the typing indicator once the response is received
+            hideTypingIndicator();
+
             if (!response.ok) {
                 throw new Error('Network response was not ok.');
             }
@@ -56,11 +62,72 @@ document.addEventListener('DOMContentLoaded', () => {
             const botReply = data.reply;
 
             // 3. Display the bot's response
-            addMessage(botReply, 'bot');
+            // Check if the bot is asking for lead capture
+            if (botReply.includes("What is your name and email address?")) {
+                addMessage(botReply, 'bot');
+                showLeadCaptureForm();
+            } else {
+                addMessage(botReply, 'bot');
+            }
 
         } catch (error) {
+            // Hide the typing indicator in case of an error
+            hideTypingIndicator();
             console.error('Error fetching bot reply:', error);
             addMessage("I'm having trouble connecting. Please try again later.", 'bot');
+        }
+    };
+
+    const showLeadCaptureForm = () => {
+        const formHTML = `
+            <form id="lead-form" class="lead-capture-form">
+                <input type="text" id="name-input" placeholder="Your Name" required>
+                <input type="email" id="email-input" placeholder="Your Email" required>
+                <button type="submit">Submit</button>
+            </form>
+        `;
+        addMessage(formHTML, 'bot');
+
+        const leadForm = document.getElementById('lead-form');
+        leadForm.addEventListener('submit', handleLeadSubmit);
+    };
+
+    const handleLeadSubmit = async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('name-input').value;
+        const email = document.getElementById('email-input').value;
+
+        addMessage("Thank you! We've received your information and will be in touch shortly.", 'bot');
+        
+        // Disable the form
+        e.target.innerHTML = '<p>Submitted.</p>';
+
+        // Send the lead data to the backend
+        try {
+            await fetch('/api/index.js', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lead: { name, email } }),
+            });
+        } catch (error) {
+            console.error('Error submitting lead:', error);
+        }
+    };
+
+    // --- Helper functions for typing indicator ---
+    const showTypingIndicator = () => {
+        const indicator = document.createElement('div');
+        indicator.classList.add('typing-indicator');
+        indicator.id = 'typing-indicator';
+        indicator.innerHTML = '<span></span><span></span><span></span>';
+        chatBox.appendChild(indicator);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    };
+
+    const hideTypingIndicator = () => {
+        const indicator = document.getElementById('typing-indicator');
+        if (indicator) {
+            indicator.remove();
         }
     };
 

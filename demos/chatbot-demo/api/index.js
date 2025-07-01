@@ -1,3 +1,6 @@
+// Load environment variables from .env file for local development
+require('dotenv').config();
+
 // Import the 'fs/promises' module to read files asynchronously
 const fs = require('fs/promises');
 // Import the 'path' module to handle file paths
@@ -20,14 +23,24 @@ module.exports = async (req, res) => {
     }
 
     try {
-        // Get the user's message from the request body
-        const { message } = req.body;
+        const { message, lead } = req.body;
 
+        // --- Lead Capture Logic ---
+        if (lead) {
+            console.log('--- NEW LEAD CAPTURED ---');
+            console.log('Name:', lead.name);
+            console.log('Email:', lead.email);
+            console.log('-------------------------');
+            // In a real application, you would add code here to:
+            // 1. Save the lead to a database or Google Sheet.
+            // 2. Send a notification email using a service like SendGrid or Resend.
+            return res.status(200).json({ success: true, message: 'Lead captured.' });
+        }
+
+        // --- AI Chat Logic ---
         if (!message) {
             return res.status(400).json({ error: 'Message is required' });
         }
-
-        // --- AI Logic Begins ---
 
         // 1. Read the knowledge base file
         const knowledgeBasePath = path.join(__dirname, 'knowledge_base.json');
@@ -37,12 +50,12 @@ module.exports = async (req, res) => {
 
         // 2. Construct the prompt for the AI
         const systemPrompt = `
-            You are a helpful and friendly AI assistant for a construction company.
+            You are a helpful and friendly AI assistant for a construction company called ${knowledgeBase.company_name}.
             Your name is "Zesty".
             You must answer the user's questions based ONLY on the information provided in the "Knowledge Base" section below.
             Do not make up answers or provide information from outside the knowledge base.
-            If the user asks a question that cannot be answered by the knowledge base, you must respond with:
-            "That's a great question. I don't have the answer right now, but I can have a human from our team get in touch with you. What is your name and email address?"
+            If the user asks a question that cannot be answered by the knowledge base, you must respond with the exact phrase:
+            "That's a great question, but I don't have the answer. I can have a human from our team get in touch with you. What is your name and email address?"
             
             --- Knowledge Base ---
             ${knowledgeText}
@@ -51,24 +64,22 @@ module.exports = async (req, res) => {
 
         // 3. Call the OpenAI API
         const completion = await openai.chat.completions.create({
-            model: 'gpt-4o', // Using a powerful and modern model
+            model: 'gpt-4o',
             messages: [
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: message }
             ],
-            temperature: 0.5, // A lower temperature makes the bot more predictable
-            max_tokens: 150, // Limit the response length
+            temperature: 0.5,
+            max_tokens: 150,
         });
 
         const botResponse = completion.choices[0].message.content;
-
-        // --- AI Logic Ends ---
 
         // Send the bot's response back to the frontend
         res.status(200).json({ reply: botResponse });
 
     } catch (error) {
-        console.error('Error processing chat message:', error);
+        console.error('Error processing request:', error);
         res.status(500).json({ error: 'An internal error occurred.' });
     }
 };
