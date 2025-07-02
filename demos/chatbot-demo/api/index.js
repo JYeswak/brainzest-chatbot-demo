@@ -32,7 +32,8 @@ module.exports = async (req, res) => {
         const knowledgeBasePath = path.join(__dirname, 'knowledge_base.json');
         const knowledgeBaseJSON = await fs.readFile(knowledgeBasePath, 'utf8');
         const knowledgeBase = JSON.parse(knowledgeBaseJSON);
-        const knowledgeText = knowledgeBase.faqs.map(faq => `Q: ${faq.question}\nA: ${faq.answer}`).join('\n\n');
+        const knowledgeText = knowledgeBase.faqs.map(faq => `Q: ${faq.question}
+A: ${faq.answer}`).join('\n\n');
 
         const systemPrompt = `
             You are a helpful and friendly AI assistant for a construction company called ${knowledgeBase.company_name}.

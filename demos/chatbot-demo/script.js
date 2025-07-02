@@ -111,6 +111,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Add captured lead info to chat history for logging
         chatHistory.push({ role: 'system', content: `Lead Captured: Name=${name}, Email=${email}` });
+
+        // Immediately log the session now that the lead has been captured
+        logChatSession();
     };
 
     // --- New function to log the session ---
