@@ -36,17 +36,20 @@ module.exports = async (req, res) => {
 A: ${faq.answer}`).join('\n\n');
 
         const systemPrompt = `
-            You are a helpful and friendly AI assistant for a construction company called ${knowledgeBase.company_name}.
-            Your name is "Zesty".
-            You must answer the user's questions based ONLY on the information provided in the "Knowledge Base" section below.
-            Do not make up answers or provide information from outside the knowledge base.
+            You are "Zesty," a friendly and highly capable AI assistant for P2 Construction, a design-build firm in Steamboat Springs, Colorado.
 
-            If the user asks a question that cannot be answered by the knowledge base, you must respond with the exact phrase:
-            "That's a great question, but I don't have the answer. I can have a human from our team get in touch with you. What is your name and email address?"
+            Your Primary Goal: To answer user questions accurately based on the provided Knowledge Base and to book a "30-minute project consultation" when a user is ready.
 
-            If the user expresses a clear intent to schedule a meeting or consultation, you must ask for their name, email, and a preferred day and time. Once you have this information, you must respond with the exact phrase: "BOOKING_CONFIRMED" followed by a single-line JSON object containing the collected information. The time must be converted to ISO 8601 format.
-            Example of a final response: BOOKING_CONFIRMED {"name":"Jane Doe","email":"jane.doe@example.com","time":"2025-07-08T15:00:00-06:00"}
-            
+            You have access to one tool:
+            - book_meeting(name, email, time): Use this tool when a user confirms they want to schedule a consultation.
+
+            Conversation Flow:
+            1. Answer any initial questions using ONLY the Knowledge Base below.
+            2. If the user asks about scheduling, pricing, or expresses clear intent to start a project, proactively offer to book a consultation.
+            3. To use the book_meeting tool, you MUST first collect the user's name, email, and their preferred day and time.
+            4. Once you have all three pieces of information, you MUST respond with the exact phrase: "BOOKING_CONFIRMED" followed by a single-line JSON object containing the user's details. The time must be converted to a full ISO 8601 format, including timezone.
+                - Example: BOOKING_CONFIRMED {"name":"Jane Doe","email":"jane.doe@example.com","time":"2025-07-08T15:00:00-06:00"}
+
             --- Knowledge Base ---
             ${knowledgeText}
             --- End Knowledge Base ---
@@ -62,30 +65,38 @@ A: ${faq.answer}`).join('\n\n');
             model: 'gpt-4o',
             messages: messages,
             temperature: 0.5,
-            max_tokens: 200, // Increased max tokens to accommodate the JSON response
+            max_tokens: 200,
         });
 
         let botResponse = completion.choices[0].message.content;
 
-        // Check if the response contains the booking confirmation keyword
-        if (botResponse.startsWith("BOOKING_CONFIRMED")) {
+        // Check if the response contains the booking confirmation keyword ANYWHERE in the string
+        if (botResponse.includes("BOOKING_CONFIRMED")) {
             try {
-                // Extract the JSON part of the string
-                const jsonString = botResponse.replace("BOOKING_CONFIRMED", "").trim();
+                // Use a regular expression to reliably extract the JSON object
+                const jsonMatch = botResponse.match(/\{.*\}/);
+                if (!jsonMatch) {
+                    throw new Error("Could not find JSON object in the AI response.");
+                }
+                const jsonString = jsonMatch[0];
                 const bookingDetails = JSON.parse(jsonString);
 
-                // Call the n8n webhook to book the meeting
+                // Call the n8n webhook to book the meeting AND log the transcript
                 await fetch('http://localhost:5678/webhook/book-p2-meeting', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                        // Booking Details
                         leadName: bookingDetails.name,
                         leadEmail: bookingDetails.email,
-                        requestedTime: bookingDetails.time
+                        requestedTime: bookingDetails.time,
+                        // Logging Details
+                        sessionId: sessionId,
+                        fullTranscript: history.map(msg => `${msg.role}: ${msg.content}`).join('\n')
                     }),
                 });
 
-                // Update the response to be more user-friendly
+                // Create a clean, user-friendly response, removing the keyword and JSON
                 botResponse = `Thank you, ${bookingDetails.name}! I have scheduled a 30-minute consultation for you. You will receive a calendar invitation at ${bookingDetails.email} shortly.`;
 
             } catch (e) {
