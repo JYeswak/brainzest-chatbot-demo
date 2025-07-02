@@ -19,24 +19,15 @@
     {
       "leadName": "Jane Doe",
       "leadEmail": "jane.doe@example.com",
-      "requestedTime": "Tomorrow at 3pm" 
+      "leadPhone": "555-123-4567",
+      "leadAddress": "123 Main St, Steamboat Springs, CO",
+      "requestedTime": "2025-07-08T15:00:00-06:00" 
     }
     ```
 
 ---
 
-### **Node 2: Date & Time**
-
-*   **Node Type:** **Date & Time**
-*   **Configuration:**
-    *   **Operation:** `Parse`
-    *   **Value to Parse:** `{{ $json.body.requestedTime }}`
-        *   This node is incredibly powerful. It can take a human-readable string like "Tomorrow at 3pm" or "Next Tuesday at noon" and convert it into a standardized, machine-readable date format (ISO 8601).
-*   **Output:** A standardized date/time string that the Google Calendar node can understand.
-
----
-
-### **Node 3: Google Calendar**
+### **Node 2: Google Calendar**
 
 *   **Node Type:** **Google Calendar**
 *   **Configuration:**
@@ -45,15 +36,18 @@
     *   **Operation:** `Create`
     *   **Calendar:** Select Angel's primary calendar from the list.
     *   **Title:** `Project Consultation: P2 Construction + {{ $json.body.leadName }}`
-    *   **Start Time:** `{{ $node["Date & Time"].json.iso }}` (This uses the output from the Date & Time node).
-    *   **End Time:** We need to add 30 minutes to the start time. The expression is:
-        `{{ $DateTime.fromISO($node["Date & Time"].json.iso).plus({ minutes: 30 }).toISO() }}`
+    *   **Start Time:** `{{ $json.body.requestedTime }}`
+    *   **End Time:** `{{ DateTime.fromISO($json.body.requestedTime, { setZone: true }).plus({ minutes: 30 }).toISO() }}`
     *   **Attendees:** `{{ $json.body.leadEmail }}`
     *   **Add Video Conferencing:** `True` (This will automatically create a Google Meet link).
     *   **Send Updates:** `all` (This ensures the client gets a calendar invitation email).
     *   **Description:**
         ```
-        This is a 30-minute initial project consultation with Angel Perez from P2 Construction to discuss your vision.
+        New Project Consultation with:
+        Name: {{ $json.body.leadName }}
+        Email: {{ $json.body.leadEmail }}
+        Phone: {{ $json.body.leadPhone }}
+        Address: {{ $json.body.leadAddress }}
 
         A Google Meet link has been attached to this event.
         ```
