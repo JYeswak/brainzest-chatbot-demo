@@ -1,6 +1,6 @@
-# n8n Workflow: Automated Appointment Booking
+# n8n Workflow: Automated Appointment Booking (with Availability Check)
 
-*   **Objective:** To receive a meeting request from our chatbot's backend and automatically create a new event in Angel's Google Calendar.
+*   **Objective:** To intelligently schedule a meeting by first checking for conflicts, and only creating the event if the time slot is free.
 *   **Trigger:** A webhook call from our `api/index.js` backend.
 
 ---
@@ -8,47 +8,74 @@
 ## Workflow Structure (Node by Node)
 
 ### **Node 1: Webhook**
-
-*   **Node Type:** **Webhook**
-*   **Configuration:**
-    *   **HTTP Method:** `POST`
-    *   **Path:** `book-p2-meeting`
-        *   This will give you a unique Production URL that our backend API will call.
-*   **Output:** The JSON data sent from our backend. It will be structured like this:
-    ```json
-    {
-      "leadName": "Jane Doe",
-      "leadEmail": "jane.doe@example.com",
-      "leadPhone": "555-123-4567",
-      "leadAddress": "123 Main St, Steamboat Springs, CO",
-      "requestedTime": "2025-07-08T15:00:00-06:00" 
-    }
-    ```
+*   **(No Change)** Receives the meeting request data.
 
 ---
 
-### **Node 2: Google Calendar**
+### **Node 2: Google Calendar - "Check for Conflicts"**
 
 *   **Node Type:** **Google Calendar**
 *   **Configuration:**
-    *   **Authentication:** Select the Google OAuth credential you have already created.
+    *   **Authentication:** Use your existing Google OAuth credential.
     *   **Resource:** `Event`
-    *   **Operation:** `Create`
-    *   **Calendar:** Select Angel's primary calendar from the list.
-    *   **Title:** `Project Consultation: P2 Construction + {{ $json.body.leadName }}`
-    *   **Start Time:** `{{ $json.body.requestedTime }}`
-    *   **End Time:** `{{ DateTime.fromISO($json.body.requestedTime, { setZone: true }).plus({ minutes: 30 }).toISO() }}`
-    *   **Attendees:** `{{ $json.body.leadEmail }}`
-    *   **Add Video Conferencing:** `True` (This will automatically create a Google Meet link).
-    *   **Send Updates:** `all` (This ensures the client gets a calendar invitation email).
-    *   **Description:**
+    *   **Operation:** `Get Many` (This operation lets us search for events within a time range).
+    *   **Calendar:** Select Angel's primary calendar.
+    *   **Return All:** Must be enabled (`true`).
+    *   **Filters:**
+        *   **Start Time:** `{{ $json.body.requestedTime }}`
+        *   **End Time:** `{{ DateTime.fromISO($json.body.requestedTime, { setZone: true }).plus({ minutes: 30 }).toISO() }}`
+*   **Output:** A list of events. If the list is empty, the time slot is free. If the list contains one or more items, there is a conflict.
+
+---
+
+### **Node 3: Router**
+
+*   **Node Type:** **Router**
+*   **Configuration:** This node creates conditional paths for your workflow.
+    *   **Routing Setup:**
+        *   Click **"Add Route"**.
+        *   **Path 1 (Default):** This is the "Conflict" path.
+        *   **Path 2:** This is the "Available" path.
+    *   **Rules for Path 2 ("Available"):**
+        *   **Condition:** `Number`
+        *   **Value 1:** `{{ $node["Check for Conflicts"].result.length }}` (This gets the number of events found in the previous step).
+        *   **Operation:** `Equals`
+        *   **Value 2:** `0`
+*   **Output:** The workflow will now split. If the number of conflicting events is 0, it will go down the "Available" path. Otherwise, it will go down the "Conflict" path.
+
+---
+
+## The "Available" Path
+
+### **Node 4a: Google Calendar - "Create Event"**
+
+*   **(This is your original Google Calendar node)**
+*   **Configuration:**
+    *   Connect this node to the **"Available"** output of the Router.
+    *   All settings (Title, Start Time, End Time, Attendees, etc.) remain the same as you have already configured them.
+
+---
+
+## The "Conflict" Path (Manual Intervention for now)
+
+### **Node 4b: Email - "Notify of Conflict"**
+
+*   **Node Type:** **Email** (or Gmail, or another notification service)
+*   **Configuration:**
+    *   Connect this node to the **"Default"** (Conflict) output of the Router.
+    *   **To:** Your email address (e.g., `joshua@zirkel.us`).
+    *   **Subject:** `Scheduling Conflict for P2 Consultation: {{ $json.body.leadName }}`
+    *   **Text:**
         ```
-        New Project Consultation with:
+        A new meeting could not be booked because of a scheduling conflict.
+
+        Client Details:
         Name: {{ $json.body.leadName }}
         Email: {{ $json.body.leadEmail }}
         Phone: {{ $json.body.leadPhone }}
-        Address: {{ $json.body.leadAddress }}
 
-        A Google Meet link has been attached to this event.
+        Requested Time: {{ $json.body.requestedTime }}
+
+        Please reach out to them manually to reschedule.
         ```
-*   **Output:** A confirmation that the calendar event has been successfully created.
+*   **Output:** An email is sent to you, allowing you to handle the conflict without losing the lead.
