@@ -81,8 +81,11 @@ A: ${faq.answer}`).join('\n\n');
                 const jsonString = jsonMatch[0];
                 const bookingDetails = JSON.parse(jsonString);
 
+                // IMPORTANT: This URL will need to be replaced with your public n8n webhook URL
+                const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL || 'YOUR_N8N_WEBHOOK_URL_HERE';
+
                 // Call the n8n webhook to book the meeting AND log the transcript
-                await fetch('http://localhost:5678/webhook/book-p2-meeting', {
+                await fetch(n8nWebhookUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

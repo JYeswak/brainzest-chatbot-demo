@@ -3,37 +3,12 @@
   "builds": [
     {
       "src": "demos/chatbot-demo/api/index.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "demos/chatbot-demo/index.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "demos/chatbot-demo/style.css",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "demos/chatbot-demo/script.js",
-      "use": "@vercel/static"
+      "use": "@vercel/node",
+      "config": { "includeFiles": ["demos/chatbot-demo/api/knowledge_base.json"] }
     }
   ],
   "routes": [
-    {
-      "src": "/api/index.js",
-      "dest": "/demos/chatbot-demo/api/index.js"
-    },
-    {
-      "src": "/style.css",
-      "dest": "/demos/chatbot-demo/style.css"
-    },
-    {
-      "src": "/script.js",
-      "dest": "/demos/chatbot-demo/script.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/demos/chatbot-demo/index.html"
-    }
+    { "src": "/api/(.*)", "dest": "demos/chatbot-demo/api/index.js" },
+    { "src": "/(.*)", "dest": "demos/chatbot-demo/$1" }
   ]
 }

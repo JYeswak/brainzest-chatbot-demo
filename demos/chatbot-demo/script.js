@@ -118,15 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- New function to log the session ---
     const logChatSession = async () => {
-        console.log("logChatSession function called."); // Log 1: Function entry
-
-        if (!chatHistory || chatHistory.length <= 1) {
-            console.log("Chat history is too short. Aborting log."); // Log 2: Abort condition
-            return; 
-        }
-
-        console.log("Chat history is long enough. Preparing to log."); // Log 3: Proceeding
-        console.log("Current chat history:", chatHistory); // Log 4: Show the history
+        if (!chatHistory || chatHistory.length <= 1) return;
 
         const fullTranscript = chatHistory.map(msg => `${msg.role}: ${msg.content}`).join('\n');
         const leadInfo = chatHistory.find(msg => msg.role === 'system' && msg.content.startsWith('Lead Captured'));
@@ -146,18 +138,17 @@ document.addEventListener('DOMContentLoaded', () => {
             leadEmail: leadEmail
         };
 
-        console.log("Payload to be sent to n8n:", payload); // Log 5: Show the final data
+        // IMPORTANT: This URL will need to be replaced with your public n8n webhook URL
+        const n8nWebhookUrl = 'YOUR_N8N_WEBHOOK_URL_HERE'; 
 
         try {
-            console.log("Attempting to send fetch request to n8n..."); // Log 6: Fetch attempt
-            await fetch('http://localhost:5678/webhook/log-chat-session', {
+            await fetch(n8nWebhookUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             });
-            console.log("Fetch request sent successfully."); // Log 7: Success
         } catch (error) {
-            console.error('Error logging chat session:', error); // Log 8: Error
+            console.error('Error logging chat session:', error);
         }
     };
 

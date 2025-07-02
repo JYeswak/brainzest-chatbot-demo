@@ -1,5 +1,5 @@
 # Ignore environment variables
-.env
+api/.env
 .env*.local
 
 # Ignore node_modules directory
