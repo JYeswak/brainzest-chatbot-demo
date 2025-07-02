@@ -1,0 +1,42 @@
+[
+	{
+		"type": "header",
+		"text": {
+			"type": "plain_text",
+			"text": "⚠️ Scheduling Conflict Detected"
+		}
+	},
+	{
+		"type": "section",
+		"fields": [
+			{
+				"type": "mrkdwn",
+				"text": "*Client Name:*\n{{ $json.body.leadName }}"
+			},
+			{
+				"type": "mrkdwn",
+				"text": "*Client Email:*\n{{ $json.body.leadEmail }}"
+			}
+		]
+	},
+	{
+		"type": "section",
+		"fields": [
+			{
+				"type": "mrkdwn",
+				"text": "*Client Phone:*\n{{ $json.body.leadPhone }}"
+			},
+			{
+				"type": "mrkdwn",
+				"text": "*Requested Time:*\n{{ $json.body.requestedTime }}"
+			}
+		]
+	},
+	{
+		"type": "section",
+		"text": {
+			"type": "mrkdwn",
+			"text": "*Action Required:*\nPlease reach out to this client manually to find a new time."
+		}
+	}
+]
