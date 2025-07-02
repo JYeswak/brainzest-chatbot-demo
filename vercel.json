@@ -1,14 +1,5 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "demos/chatbot-demo/api/index.js",
-      "use": "@vercel/node",
-      "config": { "includeFiles": ["demos/chatbot-demo/api/knowledge_base.json"] }
-    }
-  ],
-  "routes": [
-    { "src": "/api/(.*)", "dest": "demos/chatbot-demo/api/index.js" },
-    { "src": "/(.*)", "dest": "demos/chatbot-demo/$1" }
+  "rewrites": [
+    { "source": "/:path*", "destination": "/demos/chatbot-demo/index.html" }
   ]
 }
